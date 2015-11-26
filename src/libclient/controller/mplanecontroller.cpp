@@ -5,7 +5,6 @@
 #include "network/requests/getrequest.h"
 #include "network/responses/specificationresponse.h"
 #include "network/responses/capabilityresponse.h"
-#include "timing/timer.h"
 #include "settings.h"
 #include "log/logger.h"
 #include "timing/periodictiming.h"
@@ -17,10 +16,11 @@
 
 #include <QPointer>
 #include <QCoreApplication>
+#include <QTimer>
 
 LOGGER(MplaneController);
 
-static TimingPtr TIMING(new PeriodicTiming(9000));
+static int TIMEOUT = 9000;
 
 class MPlaneController::Private : public QObject
 {
@@ -61,7 +61,7 @@ public:
     SpecificationResponse specificationResponse;
     CapabilityResponse capabilityResponse;
 
-    Timer timer;
+    QTimer timer;
 
 public slots:
     void updateTimer();
@@ -83,9 +83,7 @@ void MPlaneController::Private::updateTimer()
         receiptRequester.setUrl(newUrl);
     }
 
-    TimingPtr timing = TIMING;
-
-    if (timing.isNull())
+    if (TIMEOUT <= 0)
     {
         timer.stop();
         return;
@@ -94,7 +92,7 @@ void MPlaneController::Private::updateTimer()
     // send capabilities after updating the timer
     q->sendCapabilities();
 
-    timer.setTiming(timing);
+    timer.setInterval(TIMEOUT);
     timer.start();
 }
 
